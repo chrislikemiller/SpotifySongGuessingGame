@@ -29,7 +29,6 @@ namespace SpotifySongGuessingGame.WPF
 		{
 			try
 			{
-
 				using var client = new HttpClient();
 				client.BaseAddress = new Uri("https://accounts.spotify.com/");
 				client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/x-www-form-urlencoded");
@@ -49,6 +48,7 @@ namespace SpotifySongGuessingGame.WPF
 					var json = await response.Content.ReadAsStringAsync();
 					var credentials = JsonConvert.DeserializeObject<CredentialsJson>(json);
 					TemporaryKey = credentials.access_token;
+					LastError = null;
 				}
 				else
 				{

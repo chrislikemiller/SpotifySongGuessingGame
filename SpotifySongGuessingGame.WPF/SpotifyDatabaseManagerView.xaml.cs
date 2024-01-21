@@ -32,6 +32,7 @@ namespace SpotifySongGuessingGame.WPF
 			this.configManager = configManager;
 			this.spotifyDatabase = spotifyDatabase;
 			this.credentialsProvider = credentialsProvider;
+			spotifyDatabase.MessageReceived += OnMessageReceived;
 			UpdateDatabaseSongCount();
 			this.spotifyDatabaseLocationTextBox.Text = configManager.Get(ConfigKeys.DatabaseLocation);
 			this.spotifyClientIdTextBox.Text = configManager.Get(ConfigKeys.SpotifyClientId);
@@ -47,7 +48,7 @@ namespace SpotifySongGuessingGame.WPF
 		{
 			configManager.Set(ConfigKeys.SpotifyClientId, spotifyClientIdTextBox.Text);
 		}
-		
+
 		private void spotifyClientSecretTextBox_LostFocus(object sender, RoutedEventArgs e)
 		{
 			configManager.Set(ConfigKeys.SpotifyClientSecret, spotifyClientSecretTextBox.Text);
@@ -60,54 +61,59 @@ namespace SpotifySongGuessingGame.WPF
 
 		private async void DownloadPlaylistButtonClicked(object sender, RoutedEventArgs e)
 		{
-			using (var client = new HttpClient())
+			if (string.IsNullOrEmpty(credentialsProvider.TemporaryKey))
 			{
-				var playlistId = downloadPlaylistDataTextBox.Text;
-				var url = $"https://api.spotify.com/v1/playlists/{playlistId}/tracks";
-				while (url != null)
+				downloadStatusReportLabel.Text = "Generating token...";
+				await credentialsProvider.GenerateNewKey();
+				if (!string.IsNullOrEmpty(credentialsProvider.LastError))
 				{
-					downloadStatusReportLabel.Text = "Downloading...";
-					client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-						"Bearer", credentialsProvider.TemporaryKey);
-
-					var response = await client.GetAsync(url);
-					if (response.IsSuccessStatusCode)
-					{
-						var result = await response.Content.ReadAsStringAsync();
-						File.WriteAllText($"{playlistId}.json", result);
-						var parsed = JsonConvert.DeserializeObject<SpotifyPlaylistResponse>(result);
-						downloadStatusReportLabel.Text = $"Success!";
-						spotifyDatabase.ParseResponseIntoDatabase(parsed);
-						UpdateDatabaseSongCount();
-
-						url = parsed.next;
-					}
-					else
-					{
-						downloadStatusReportLabel.Text = $"Download failed! {await response.Content.ReadAsStringAsync()}";
-						return;
-					}
+					downloadStatusReportLabel.Text = $"Token generation failed! {credentialsProvider.LastError}";
 				}
+				else
+				{
+					downloadStatusReportLabel.Text = "Token generated successfully!";
+				}
+			}
+
+			using var client = new HttpClient();
+			var playlistId = downloadPlaylistDataTextBox.Text;
+			var url = $"https://api.spotify.com/v1/playlists/{playlistId}/tracks";
+			while (url != null)
+			{
+				downloadStatusReportLabel.Text = "Downloading...";
+				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+					"Bearer", credentialsProvider.TemporaryKey);
+
+				var response = await client.GetAsync(url);
+				if (response.IsSuccessStatusCode)
+				{
+					var result = await response.Content.ReadAsStringAsync();
+					await File.WriteAllTextAsync($"{playlistId}.json", result);
+					var parsed = JsonConvert.DeserializeObject<SpotifyPlaylistResponse>(result);
+
+					await spotifyDatabase.ParseResponseIntoDatabase(parsed);
+					UpdateDatabaseSongCount();
+
+					url = parsed.next;
+				}
+				else
+				{
+					downloadStatusReportLabel.Text = $"Download failed! {await response.Content.ReadAsStringAsync()}";
+					return;
+				}
+				downloadStatusReportLabel.Text = $"Success!";
 			}
 		}
 
 		private void ReloadDatabaseButtonClicked(object sender, RoutedEventArgs e)
 		{
 			spotifyDatabase.ReloadDatabase();
-			downloadStatusReportLabel.Text = $"Database reloaded";
+			downloadStatusReportLabel.Text = $"Database reloaded!";
 		}
 
-		private async void TemporaryKeyGenerateClicked(object sender, RoutedEventArgs e)
+		private void OnMessageReceived(string msg)
 		{
-			await credentialsProvider.GenerateNewKey();
-			if (!string.IsNullOrEmpty(credentialsProvider.TemporaryKey))
-			{
-				downloadStatusReportLabel.Text = "Token generated successfully!";
-			}
-			else
-			{
-				downloadStatusReportLabel.Text = $"Token generation failed! {credentialsProvider.LastError}";
-			}
+			Application.Current.Dispatcher.Invoke(() => downloadStatusReportLabel.Text = msg);
 		}
 	}
 }

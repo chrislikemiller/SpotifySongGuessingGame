@@ -6,7 +6,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         Title="Song Manager"
         Width="750"
-        Height="170"
+        Height="270"
         mc:Ignorable="d">
 	<Grid Margin="10">
 		<Grid.RowDefinitions>
@@ -81,13 +81,6 @@
 		         HorizontalAlignment="Left"
 		         VerticalAlignment="Center"
 		         LostFocus="spotifyClientSecretTextBox_LostFocus" />
-		<Button Grid.Row="2"
-		        Grid.Column="2"
-		        Margin="2"
-		        Click="TemporaryKeyGenerateClicked"
-		        Content="Generate" />
-
-
 
 		<TextBlock Grid.Row="3"
 		           Grid.Column="0"

@@ -24,22 +24,16 @@ namespace SpotifySongGuessingGame.WPF
 		private readonly ConfigManager configManager;
 		private readonly SpotifyDatabase spotifyDatabase;
 		private readonly SpotifyCredentialsProvider credentialsProvider;
+		private readonly ReleaseDateCorrectionService releaseDateCorrection;
 
 		public MainWindow()
 		{
 			InitializeComponent();
 
 			configManager = new ConfigManager();
-			spotifyDatabase = new SpotifyDatabase(configManager);
+			releaseDateCorrection = new ReleaseDateCorrectionService();
+			spotifyDatabase = new SpotifyDatabase(configManager, releaseDateCorrection);
 			credentialsProvider = new SpotifyCredentialsProvider(configManager);
-
-			//var postfix = "1UtHm1gcgQ1QmxnVkHiLTk";
-			//var jsonContent = File.ReadAllText(@$"D:\result_{postfix}.json");
-			//var playlist = JsonConvert.DeserializeObject<SpotifyPlaylistResponse>(jsonContent);
-
-
-
-			//File.WriteAllLines(@$"D:\output_{postfix}.csv", Songs.Select(x => $"{x.TrackId};{x.Artist};{x.SongName};{x.AlbumReleaseYear}"), Encoding.UTF8);
 		}
 
 		private void SpotifyDataBaseOpenClicked(object sender, RoutedEventArgs e)

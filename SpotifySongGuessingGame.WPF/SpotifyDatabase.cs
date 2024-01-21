@@ -15,12 +15,16 @@ namespace SpotifySongGuessingGame.WPF
 		private HashSet<ProperSongModel> allSongs;
 
 		private readonly ConfigManager configManager;
+		private readonly ReleaseDateCorrectionService releaseDateCorrectionService;
 		private string databaseLocationPath;
 
-		public SpotifyDatabase(ConfigManager configManager)
+		public event Action<string> MessageReceived;
+
+		public SpotifyDatabase(ConfigManager configManager, ReleaseDateCorrectionService releaseDateCorrectionService)
 		{
 			allSongs = new HashSet<ProperSongModel>();
 			this.configManager = configManager;
+			this.releaseDateCorrectionService = releaseDateCorrectionService;
 			ReloadDatabase();
 		}
 
@@ -33,28 +37,32 @@ namespace SpotifySongGuessingGame.WPF
 			}
 		}
 
-		public void ParseResponseIntoDatabase(SpotifyPlaylistResponse response)
+		public Task ParseResponseIntoDatabase(SpotifyPlaylistResponse response)
 		{
-			AddSongs(response.items.Select(ProperSongModel.Parse));
+			return AddSongs(response.items.Select(ProperSongModel.Parse));
 		}
 
-		public void AddSongs(IEnumerable<ProperSongModel> newsongs)
+		private async Task AddSongs(IEnumerable<ProperSongModel> newsongs)
 		{
 			allSongs.AddRangeUnique(newsongs);
-			SaveData();
+			await UpdateReleaseDates();
+			await SaveData();
 		}
 
-		public void UpdateSongs(Action<ProperSongModel> updateFunc)
+		public async Task UpdateReleaseDates()
 		{
+			int counter = 0;
 			foreach (var song in allSongs)
 			{
-				updateFunc(song);
+				counter++;
+				MessageReceived?.Invoke($"({counter} / {allSongs.Count}) Updating: {song.Artist} - {song.SongName}");
+				await releaseDateCorrectionService.UpdateSong(song);
 			}
 		}
 
-		private void SaveData()
+		private Task SaveData()
 		{
-			File.WriteAllText(databaseLocationPath, JsonConvert.SerializeObject(allSongs));
+			return File.WriteAllTextAsync(databaseLocationPath, JsonConvert.SerializeObject(allSongs));
 		}
 
 		private void LoadData()

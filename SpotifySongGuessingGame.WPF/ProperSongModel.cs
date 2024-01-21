@@ -12,7 +12,7 @@ namespace SpotifySongGuessingGame.Common
 		Spotify,
 		Musicbrainz
 	}
-	[DebuggerDisplay("{Artist} - {SongName} ({ReleaseYear})")]
+	[DebuggerDisplay("{Artist} - {SongName} | {ReleaseYear} ({ReleaseDateSource})")]
 	public class ProperSongModel : IEquatable<ProperSongModel>
 	{
 		public string TrackUri { get; set; }
@@ -22,7 +22,7 @@ namespace SpotifySongGuessingGame.Common
 		public string ArtistId { get; set; }
 		public string Artist { get; set; }
 		public string SongName { get; set; }
-		public int? ReleaseYear { get; set; }
+		public int ReleaseYear { get; set; }
 		public ReleaseDateSource ReleaseDateSource { get; set; }
 
 		public bool Equals(ProperSongModel other)
@@ -57,7 +57,7 @@ namespace SpotifySongGuessingGame.Common
 				ArtistId = x.track.artist.id,
 				ArtistUri = x.track.artist.uri,
 
-				ReleaseYear = x.track.album.release_date?.ParseYear(),
+				ReleaseYear = x.track.album.release_date?.ParseYear() ?? int.MaxValue,
 				ReleaseDateSource = ReleaseDateSource.Spotify
 			};
 		}

@@ -16,127 +16,112 @@ namespace SpotifySongGuessingGame.WPF
 {
 	public class ReleaseDateCorrectionService
 	{
-		public void UpdateAllSongs(IEnumerable<ProperSongModel> songs)
+		public async Task UpdateSong(ProperSongModel song)
 		{
-			// todo: make it available for individual songs
-			foreach (var song in songs)
+			if (song.ReleaseDateSource == ReleaseDateSource.Musicbrainz)
 			{
-				Trace.WriteLine($"Next song: {song.Artist} - {song.SongName}");
-				var artistQuery = $"\"{HttpUtility.UrlEncode(song.Artist)}\"";
-				var artistUrl = $@"https://musicbrainz.org/ws/2/artist?query={artistQuery}&fmt=json";
-				MusicbrainzArtistResponse artistData = null;
-				var retryCount = 0;
-				do
+				Trace.WriteLine($"Already updated: {song}");
+				return;
+			}
+			Trace.WriteLine($"\nNext song: {song.Artist} - {song.SongName}");
+
+			MusicbrainzArtistResponse artistData = null;
+			var artistQuery = $"\"{HttpUtility.UrlEncode(song.Artist)}\"";
+			var artistUrl = $@"https://musicbrainz.org/ws/2/artist?query={artistQuery}&fmt=json";
+			var retryCount = 0;
+			while (retryCount < 20)
+			{
+				artistData = await GetMusicBrainzDataForUrl<MusicbrainzArtistResponse>(artistUrl);
+				if (artistData.artists?.Length > 0)
 				{
-					artistData = GetMusicBrainzDataForUrl<MusicbrainzArtistResponse>(artistUrl);
-					if (artistData.artists?.Length > 0)
-					{
-						retryCount = 9999;
-					}
-					retryCount++;
-					Trace.WriteLine("Waiting...");
-					Thread.Sleep(1000);
+					break;
 				}
-				while (retryCount < 8);
-				if (artistData.artists == null)
+				retryCount++;
+				Trace.WriteLine("Retrying. Server might be overloaded.");
+			}
+
+			if (artistData.artists.Length == 0)
+			{
+				Trace.WriteLine($"No artists exist in database for {song}");
+				Trace.WriteLine(artistUrl);
+				return;
+			}
+
+			SongResponseJson songModel = null;
+
+			int currentArtistIndex = 0;
+			var artistList = artistData.artists
+				.OrderByDescending(x => x.score)
+				.ToArray();
+
+			foreach (var artist in artistList)
+			{
+				currentArtistIndex++;
+				Trace.WriteLine($"Trying artist: {artist.name} ({currentArtistIndex} / {artistList.Count()})");
+
+				var songQuery = $"{song.SongName} AND arid:{artist.id}";
+				var songUrl = $"https://musicbrainz.org/ws/2/recording?query={HttpUtility.UrlEncode(songQuery)}&inc=releases&fmt=json";
+				songModel = await GetMusicBrainzDataForUrl<SongResponseJson>(songUrl);
+
+				if (songModel.recordings?.Length != 0)
 				{
-					Trace.WriteLine($"@@@ Could not find {song.Artist}");
-					Trace.WriteLine(artistUrl);
-					continue;
+					Trace.WriteLine($"Found recordings for {song.SongName} by {song.Artist}");
+					break;
 				}
+				Trace.WriteLine($"Trying another artist for {song.SongName}");
+			}
 
-				SongResponseJson ProperSongModel = null;
+			if (songModel.recordings?.Length == 0)
+			{
+				Trace.WriteLine($"Skipping because of no artist found {song.SongName}");
+				return;
+			}
+			var recordings = songModel.recordings
+				.Where(x => x.releases?.Length > 0)
+				.Where(x => x.score > 50);
 
-				var artistList = GetArtistList(song, artistData);
-				int currentArtistIndex = 0;
-
-				foreach (var artist in artistList)
-				{
-					currentArtistIndex++;
-					Trace.WriteLine($"Trying artist {currentArtistIndex}/{artistList.Length}");
-
-					var artistId = artist.id;
-					if (string.IsNullOrEmpty(artistId))
-					{
-						Trace.WriteLine($"Artist not found {song.Artist}");
-						continue;
-					}
-					var songQuery = $"{song.SongName} AND arid:{artistId}";
-					var songUrl = $"https://musicbrainz.org/ws/2/recording?query={HttpUtility.UrlEncode(songQuery)}&inc=releases&fmt=json";
-					ProperSongModel = GetMusicBrainzDataForUrl<SongResponseJson>(songUrl);
-
-					if (ProperSongModel.recordings?.Length != 0)
-					{
-						break;
-					}
-
-					// todo: retry if no songs found, maybe I picked the wrong artist id
-					Trace.WriteLine($"Trying another artist {song.SongName}");
-				}
-
-				if (ProperSongModel == null || ProperSongModel.recordings.Length == 0)
-				{
-					// todo: retry if no songs found, maybe I picked the wrong artist id
-					Trace.WriteLine($"Skipping because of no artist found {song.SongName}");
-					continue;
-				}
-				var recordings = ProperSongModel.recordings
-					.Where(x => x.releases?.Length > 0)
-					.Where(x => x.score > 85);
-
-				var allReleases = recordings.SelectMany(x => x.releases)
+			var allReleases = recordings
+				.SelectMany(x => x.releases)
 				.Where(x => !string.IsNullOrEmpty(x.date));
 
-				string smallestYear = "";
-				string firstsmallestYear = "";
-				if (allReleases.Any())
-				{
-					smallestYear = allReleases.Select(ParseYearFromRelease).Min();
-					firstsmallestYear = smallestYear;
-				}
-				if (int.Parse(smallestYear) > song.ReleaseYear)
-				{
-					var releaseDateUrl = $"https://musicbrainz.org/ws/2/recording/{HttpUtility.UrlEncode(recordings.First().id)}?inc=releases&fmt=json";
-					var releaseDateData = GetMusicBrainzDataForUrl<ReleaseDateResponseJson>(releaseDateUrl);
-					var years = releaseDateData.releases.Where(x => !string.IsNullOrEmpty(x.date)).Select(ParseYearFromRelease);
-					smallestYear = years.OrderBy(x => x).First();
-				}
-				smallestYear = Math.Min(int.Parse(smallestYear), (int)song.ReleaseYear).ToString();
-				Trace.WriteLine($"@@@@ {song.Artist} - {song.SongName} ({song.ReleaseYear}) -> {smallestYear}");
-			}
-		}
-
-		private string ParseYearFromRelease(Release x)
-		{
-			string result;
-			if (DateTime.TryParse(x.date, out var date))
-				result = date.Year.ToString();
-			else
+			int smallestYear = int.MaxValue;
+			if (allReleases.Any())
 			{
-				result = int.Parse(x.date[..4]).ToString();
+				smallestYear = GetSmallestYear(allReleases);
 			}
-			return result;
+			if (smallestYear > song.ReleaseYear)
+			{
+				Trace.WriteLine($"Smallest year was bigger than spotify, checking more releases");
+				var releaseDateUrl = $"https://musicbrainz.org/ws/2/recording/{HttpUtility.UrlEncode(recordings.First().id)}?inc=releases&fmt=json";
+				var releaseDateData = await GetMusicBrainzDataForUrl<ReleaseDateResponseJson>(releaseDateUrl);
+				smallestYear = GetSmallestYear(releaseDateData.releases);
+			}
+			smallestYear = Math.Min(smallestYear, song.ReleaseYear);
+			Trace.WriteLine($"@@@ {song.Artist} - {song.SongName} || {song.ReleaseYear} -> {smallestYear}");
+			song.ReleaseDateSource = ReleaseDateSource.Musicbrainz;
+			song.ReleaseYear = smallestYear;
 		}
 
-		private string PickArtistId(ProperSongModel song, MusicbrainzArtistResponse artistData)
-		{
-			var matching = artistData.artists.Where(x => string.Equals(x.name, song.Artist)).OrderByDescending(x => x.score).ToArray();
-			return matching.FirstOrDefault()?.id;
-		}
+		private int GetSmallestYear(IEnumerable<Release> releases) => releases.Select(x => x.date.ParseYear()).Min();
 
-		private MusicbrainzArtist[] GetArtistList(ProperSongModel song, MusicbrainzArtistResponse artistData)
+		private async Task<T> GetMusicBrainzDataForUrl<T>(string url)
 		{
-			return artistData.artists.Where(x => string.Equals(x.name, song.Artist)).OrderByDescending(x => x.score).ToArray();
-		}
+			Thread.Sleep(1000); // server is sensitive to overloading, it can throttle you
 
-		private T GetMusicBrainzDataForUrl<T>(string url)
-		{
 			var uri = new Uri(url);
 			var credentials = new NetworkCredential("itslikecsaki", "dvx-hvy7ADF3wmr8rwj", "https://musicbrainz.org");
 			var cache = new CredentialCache { { uri, "Digest", credentials } };
 			using var request = new HttpClient(new HttpClientHandler() { Credentials = cache, PreAuthenticate = true });
 			request.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-			var response = request.GetAsync(url).Result;
+			HttpResponseMessage response = null;
+			try
+			{
+				response = await request.GetAsync(url);
+			}
+			catch (Exception ex)
+			{
+				Trace.WriteLine(ex);
+			}
 			using var responseStream = response.Content.ReadAsStream();
 			using var responseStreamReader = new StreamReader(responseStream, Encoding.Default);
 			var json = responseStreamReader.ReadToEnd();

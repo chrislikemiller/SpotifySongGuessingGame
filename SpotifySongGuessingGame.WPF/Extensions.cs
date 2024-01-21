@@ -21,17 +21,20 @@ namespace SpotifySongGuessingGame.Common
 			AddRange(source, toAdd.Distinct());
 		}
 
-		public static int? ParseYear(this string dateString)
+		public static int ParseYear(this string dateString)
 		{
 			try
 			{
+				if (string.IsNullOrEmpty(dateString))
+					return int.MaxValue;
+
 				return DateTime.TryParse(dateString, out var date)
 					? date.Year
 					: Convert.ToInt32(dateString[..4]);
 			}
 			catch
 			{
-				return null;
+				return int.MaxValue;
 			}
 		}
 	}
