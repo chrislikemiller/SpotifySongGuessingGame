@@ -16,6 +16,13 @@ namespace SpotifySongGuessingGame.WPF
 {
 	public class ReleaseDateCorrectionService
 	{
+		private readonly ConfigManager configManager;
+
+		public ReleaseDateCorrectionService(ConfigManager configManager)
+		{
+			this.configManager = configManager;
+		}
+
 		public async Task UpdateSong(ProperSongModel song)
 		{
 			if (song.ReleaseDateSource == ReleaseDateSource.Musicbrainz)

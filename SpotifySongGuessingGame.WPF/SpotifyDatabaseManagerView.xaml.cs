@@ -35,23 +35,11 @@ namespace SpotifySongGuessingGame.WPF
 			spotifyDatabase.MessageReceived += OnMessageReceived;
 			UpdateDatabaseSongCount();
 			this.spotifyDatabaseLocationTextBox.Text = configManager.Get(ConfigKeys.DatabaseLocation);
-			this.spotifyClientIdTextBox.Text = configManager.Get(ConfigKeys.SpotifyClientId);
-			this.spotifyClientSecretTextBox.Text = configManager.Get(ConfigKeys.SpotifyClientSecret);
 		}
 
 		private void UpdateDatabaseSongCount()
 		{
 			databaseNumberOfSongsLabel.Text = $"{spotifyDatabase.Count()} songs";
-		}
-
-		private void spotifyClientIdTextBox_LostFocus(object sender, RoutedEventArgs e)
-		{
-			configManager.Set(ConfigKeys.SpotifyClientId, spotifyClientIdTextBox.Text);
-		}
-
-		private void spotifyClientSecretTextBox_LostFocus(object sender, RoutedEventArgs e)
-		{
-			configManager.Set(ConfigKeys.SpotifyClientSecret, spotifyClientSecretTextBox.Text);
 		}
 
 		private void spotifyDatabaseLocationTextBox_LostFocus(object sender, RoutedEventArgs e)
