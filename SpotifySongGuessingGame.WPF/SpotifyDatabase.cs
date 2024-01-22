@@ -10,80 +10,64 @@ using System.Threading.Tasks;
 
 namespace SpotifySongGuessingGame.WPF
 {
-	public class SpotifyDatabase : IEnumerable<ProperSongModel>
+	public class SpotifyDatabase
 	{
-		private HashSet<ProperSongModel> allSongs;
-
-		private readonly ConfigManager configManager;
-		private readonly ReleaseDateCorrectionService releaseDateCorrectionService;
 		private string databaseLocationPath;
 
-		public event Action<string> MessageReceived;
-
-		public SpotifyDatabase(ConfigManager configManager, ReleaseDateCorrectionService releaseDateCorrectionService)
-		{
-			allSongs = new HashSet<ProperSongModel>();
-			this.configManager = configManager;
-			this.releaseDateCorrectionService = releaseDateCorrectionService;
-			ReloadDatabase();
-		}
-
-		public void ReloadDatabase()
+		public SpotifyDatabase(ConfigManager configManager)
 		{
 			databaseLocationPath = configManager.Get(ConfigKeys.DatabaseLocation);
-			if (!string.IsNullOrWhiteSpace(databaseLocationPath))
+			Playlists = new Dictionary<string, HashSet<ProperSongModel>>();
+			LoadAllPlaylists();
+		}
+
+		public Dictionary<string, HashSet<ProperSongModel>> Playlists { get; set; }
+
+		public async Task AddSongs(string playlistId, IEnumerable<ProperSongModel> newsongs)
+		{
+			GetPlaylist(playlistId).AddRangeUnique(newsongs);
+			await SaveData(playlistId);
+		}
+
+		private HashSet<ProperSongModel> GetPlaylist(string playlistId)
+		{
+			if (!Playlists.ContainsKey(playlistId))
 			{
-				LoadData();
+				Playlists[playlistId] = new HashSet<ProperSongModel>();
+			}
+			return Playlists[playlistId];
+		}
+
+		public bool IsPlaylistDownloaded(string playlistId)
+		{
+			return File.Exists(GetPlaylistFilePath(playlistId));
+		}
+
+		private Task SaveData(string playlistId)
+		{
+			return File.WriteAllTextAsync(GetPlaylistFilePath(playlistId), JsonConvert.SerializeObject(Playlists[playlistId]));
+		}
+
+		private void LoadAllPlaylists()
+		{
+			var files = Directory.GetFiles(databaseLocationPath);
+			var playlistIds = files.Select(x => new FileInfo(x).Name.Split(".").First());
+			foreach (var playlistId in playlistIds)
+			{
+				var path = GetPlaylistFilePath(playlistId);
+				if (!File.Exists(path))
+				{
+					File.CreateText(path);
+				}
+
+				var databaseJson = File.ReadAllText(path);
+				Playlists[playlistId] = JsonConvert.DeserializeObject<HashSet<ProperSongModel>>(databaseJson) ?? new HashSet<ProperSongModel>();
 			}
 		}
 
-		public Task ParseResponseIntoDatabase(SpotifyPlaylistResponse response)
+		private string GetPlaylistFilePath(string playlistId)
 		{
-			return AddSongs(response.items.Select(ProperSongModel.Parse));
-		}
-
-		private async Task AddSongs(IEnumerable<ProperSongModel> newsongs)
-		{
-			allSongs.AddRangeUnique(newsongs);
-			await UpdateReleaseDates();
-			await SaveData();
-		}
-
-		public async Task UpdateReleaseDates()
-		{
-			int counter = 0;
-			foreach (var song in allSongs)
-			{
-				counter++;
-				MessageReceived?.Invoke($"({counter} / {allSongs.Count}) Updating: {song.Artist} - {song.SongName}");
-				await releaseDateCorrectionService.UpdateSong(song);
-			}
-		}
-
-		private Task SaveData()
-		{
-			return File.WriteAllTextAsync(databaseLocationPath, JsonConvert.SerializeObject(allSongs));
-		}
-
-		private void LoadData()
-		{
-			if (!File.Exists(databaseLocationPath))
-			{
-				File.WriteAllText(databaseLocationPath, JsonConvert.SerializeObject(new List<ProperSongModel>()));
-			}
-
-			var databaseJson = File.ReadAllText(databaseLocationPath);
-			allSongs = JsonConvert.DeserializeObject<HashSet<ProperSongModel>>(databaseJson) ?? new HashSet<ProperSongModel>();
-		}
-
-		public IEnumerator<ProperSongModel> GetEnumerator()
-		{
-			return allSongs.GetEnumerator();
-		}
-
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return allSongs.GetEnumerator();
+			return Path.Combine(databaseLocationPath, $"{playlistId}.json");
 		}
 	}
 }

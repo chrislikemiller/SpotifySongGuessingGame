@@ -23,7 +23,7 @@ namespace SpotifySongGuessingGame.WPF
 
 		public void GenerateAllImages()
 		{
-			foreach (var song in spotifyDatabase)
+			foreach (var song in spotifyDatabase.Playlists.Values.First())
 			{
 				var file = @$"D:\song_guessing_game_images\songdata\songdata_{song.TrackId}.png";
 				if (File.Exists(file))
@@ -51,7 +51,7 @@ namespace SpotifySongGuessingGame.WPF
 				{
 					artistTextSize = drawing.MeasureString(song.Artist, artistSongNameFont, maxSize);
 					songNameTextSize = drawing.MeasureString(song.SongName, releaseYearFont, maxSize);
-					releaseYearTextSize = drawing.MeasureString(song.ReleaseYear.ToString(), releaseYearFont, maxSize);
+					releaseYearTextSize = drawing.MeasureString(song.ReleaseYearSpotify.ToString(), releaseYearFont, maxSize);
 				}
 			}
 			var retImg = new Bitmap((int)maxSize.Width, (int)maxSize.Height);
@@ -68,7 +68,7 @@ namespace SpotifySongGuessingGame.WPF
 					var heightOffset = 10f;
 					drawing.DrawString(song.Artist, artistSongNameFont, textBrush, new RectangleF(0, heightOffset, maxSize.Width, artistTextSize.Height), stringFormat);
 					heightOffset += artistTextSize.Height;
-					drawing.DrawString(song.ReleaseYear.ToString(), releaseYearFont, textBrush, new RectangleF(0, heightOffset, maxSize.Width, releaseYearTextSize.Height), stringFormat);
+					drawing.DrawString(song.ReleaseYearSpotify.ToString(), releaseYearFont, textBrush, new RectangleF(0, heightOffset, maxSize.Width, releaseYearTextSize.Height), stringFormat);
 					heightOffset += releaseYearTextSize.Height;
 					drawing.DrawString(song.SongName, artistSongNameFont, textBrush, new RectangleF(0, heightOffset, maxSize.Width, songNameTextSize.Height), stringFormat);
 					var attr = new ImageAttributes();

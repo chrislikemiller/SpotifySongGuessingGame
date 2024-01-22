@@ -32,14 +32,7 @@ namespace SpotifySongGuessingGame.WPF
 			this.configManager = configManager;
 			this.spotifyDatabase = spotifyDatabase;
 			this.credentialsProvider = credentialsProvider;
-			spotifyDatabase.MessageReceived += OnMessageReceived;
-			UpdateDatabaseSongCount();
 			this.spotifyDatabaseLocationTextBox.Text = configManager.Get(ConfigKeys.DatabaseLocation);
-		}
-
-		private void UpdateDatabaseSongCount()
-		{
-			databaseNumberOfSongsLabel.Text = $"{spotifyDatabase.Count()} songs";
 		}
 
 		private void spotifyDatabaseLocationTextBox_LostFocus(object sender, RoutedEventArgs e)
@@ -47,28 +40,34 @@ namespace SpotifySongGuessingGame.WPF
 			configManager.Set(ConfigKeys.DatabaseLocation, spotifyDatabaseLocationTextBox.Text);
 		}
 
-		private async void DownloadPlaylistButtonClicked(object sender, RoutedEventArgs e)
+		private async void CreateTopSongPlaylistButtonClicked(object sender, RoutedEventArgs e)
 		{
-			if (string.IsNullOrEmpty(credentialsProvider.TemporaryKey))
+			await GenerateSpotifyCredentialsIfNeeded();
+			int topXSongs = 2;
+			if (int.TryParse(topXSongTextBox.Text, out var x))
 			{
-				downloadStatusReportLabel.Text = "Generating token...";
-				await credentialsProvider.GenerateNewKey();
-				if (!string.IsNullOrEmpty(credentialsProvider.LastError))
-				{
-					downloadStatusReportLabel.Text = $"Token generation failed! {credentialsProvider.LastError}";
-				}
-				else
-				{
-					downloadStatusReportLabel.Text = "Token generated successfully!";
-				}
+				topXSongs = x;
+			}
+			var playlistId = downloadTopSongsPlaylistDataTextBox.Text;
+			var playlist = await DownloadPlaylist(playlistId);
+			var targetFileName = $"{playlistId}_top{topXSongs}";
+			if (playlist == null)
+			{
+				return;
+			}
+			if (spotifyDatabase.IsPlaylistDownloaded(targetFileName))
+			{
+				UpdateStatus("Playlist already exists!");
+				return;
 			}
 
+			var list = playlist.ToList();
+			var artists = playlist.Select(x => x.ArtistId).Distinct().ToArray();
 			using var client = new HttpClient();
-			var playlistId = downloadPlaylistDataTextBox.Text;
-			var url = $"https://api.spotify.com/v1/playlists/{playlistId}/tracks";
-			while (url != null)
+			for (int i = 0; i < artists.Length; i++)
 			{
-				downloadStatusReportLabel.Text = "Downloading...";
+				var url = $@"https://api.spotify.com/v1/artists/{artists[i]}/top-tracks?market=HU";
+				UpdateStatus($"Downloading top songs of artists {i} / {artists.Length}...");
 				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
 					"Bearer", credentialsProvider.TemporaryKey);
 
@@ -76,30 +75,89 @@ namespace SpotifySongGuessingGame.WPF
 				if (response.IsSuccessStatusCode)
 				{
 					var result = await response.Content.ReadAsStringAsync();
-					await File.WriteAllTextAsync($"{playlistId}.json", result);
+					var parsed = JsonConvert.DeserializeObject<SpotifyArtistTopSongResponse>(result);
+					list.AddRange(parsed.tracks.Select(ProperSongModel.Parse).OrderByDescending(x => x.Popularity).Take(topXSongs));
+				}
+				else
+				{
+					var error = await response.Content.ReadAsStringAsync();
+					UpdateStatus($"Download failed! {error}");
+					continue;
+				}
+				UpdateStatus($"Downloaded top {topXSongs} by {artists.Length} playlist!");
+			}
+			await spotifyDatabase.AddSongs(targetFileName, list);
+		}
+
+
+		private async void DownloadPlaylistButtonClicked(object sender, RoutedEventArgs e)
+		{
+			await GenerateSpotifyCredentialsIfNeeded();
+
+			var playlistId = downloadPlaylistDataTextBox.Text;
+			var list = await DownloadPlaylist(playlistId);
+			if (list == null) return;
+
+			await spotifyDatabase.AddSongs(playlistId, list);
+
+		}
+
+		private async Task<IEnumerable<ProperSongModel>> DownloadPlaylist(string playlistId)
+		{
+			var url = $"https://api.spotify.com/v1/playlists/{playlistId}/tracks";
+
+			if (spotifyDatabase.IsPlaylistDownloaded(playlistId))
+			{
+				UpdateStatus("Playlist already downloaded!");
+				return spotifyDatabase.Playlists[playlistId];
+			}
+
+			var list = new List<ProperSongModel>();
+			using var client = new HttpClient();
+			while (url != null)
+			{
+				UpdateStatus("Downloading...");
+				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+					"Bearer", credentialsProvider.TemporaryKey);
+
+				var response = await client.GetAsync(url);
+				if (response.IsSuccessStatusCode)
+				{
+					var result = await response.Content.ReadAsStringAsync();
 					var parsed = JsonConvert.DeserializeObject<SpotifyPlaylistResponse>(result);
 
-					await spotifyDatabase.ParseResponseIntoDatabase(parsed);
-					UpdateDatabaseSongCount();
+					list.AddRange(parsed.items.Select(ProperSongModel.Parse));
 
 					url = parsed.next;
 				}
 				else
 				{
-					downloadStatusReportLabel.Text = $"Download failed! {await response.Content.ReadAsStringAsync()}";
-					return;
+					UpdateStatus($"Download failed! {await response.Content.ReadAsStringAsync()}");
+					return null;
 				}
-				downloadStatusReportLabel.Text = $"Success!";
+				UpdateStatus($"Download success!");
+			}
+			return list;
+		}
+
+		private async Task GenerateSpotifyCredentialsIfNeeded()
+		{
+			if (string.IsNullOrEmpty(credentialsProvider.TemporaryKey))
+			{
+				UpdateStatus("Generating token...");
+				await credentialsProvider.GenerateNewKey();
+				if (!string.IsNullOrEmpty(credentialsProvider.LastError))
+				{
+					UpdateStatus($"Token generation failed! {credentialsProvider.LastError}");
+				}
+				else
+				{
+					UpdateStatus("Token generated successfully!");
+				}
 			}
 		}
 
-		private void ReloadDatabaseButtonClicked(object sender, RoutedEventArgs e)
-		{
-			spotifyDatabase.ReloadDatabase();
-			downloadStatusReportLabel.Text = $"Database reloaded!";
-		}
-
-		private void OnMessageReceived(string msg)
+		private void UpdateStatus(string msg)
 		{
 			Application.Current.Dispatcher.Invoke(() => downloadStatusReportLabel.Text = msg);
 		}

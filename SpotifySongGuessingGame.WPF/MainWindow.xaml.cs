@@ -15,7 +15,7 @@ namespace SpotifySongGuessingGame.WPF
 
 			configManager = new ConfigManager();
 			releaseDateCorrection = new ReleaseDateCorrectionService(configManager);
-			spotifyDatabase = new SpotifyDatabase(configManager, releaseDateCorrection);
+			spotifyDatabase = new SpotifyDatabase(configManager);
 			credentialsProvider = new SpotifyCredentialsProvider(configManager);
 		}
 
@@ -27,7 +27,7 @@ namespace SpotifySongGuessingGame.WPF
 
 		private void MusicbrainzManagerClicked(object sender, RoutedEventArgs e)
 		{
-			var window = new SpotifyDatabaseManagerView(configManager, spotifyDatabase, credentialsProvider);
+			var window = new MusicbrainzReleaseDateManagerView(spotifyDatabase, releaseDateCorrection);
 			window.ShowDialog();
 		}
 

@@ -37,5 +37,10 @@ namespace SpotifySongGuessingGame.Common
 				return int.MaxValue;
 			}
 		}
+
+		public static string ReverseWords(this string str)
+		{
+			return string.Join(" ", str.Split(" ").Reverse());
+		}
 	}
 }

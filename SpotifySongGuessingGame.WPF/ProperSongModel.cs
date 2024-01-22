@@ -7,11 +7,6 @@ using System.Threading.Tasks;
 
 namespace SpotifySongGuessingGame.Common
 {
-	public enum ReleaseDateSource
-	{
-		Spotify,
-		Musicbrainz
-	}
 	[DebuggerDisplay("{Artist} - {SongName} | {ReleaseYear} ({ReleaseDateSource})")]
 	public class ProperSongModel : IEquatable<ProperSongModel>
 	{
@@ -22,8 +17,8 @@ namespace SpotifySongGuessingGame.Common
 		public string ArtistId { get; set; }
 		public string Artist { get; set; }
 		public string SongName { get; set; }
-		public int ReleaseYear { get; set; }
-		public ReleaseDateSource ReleaseDateSource { get; set; }
+		public int ReleaseYearSpotify { get; set; }
+		public int ReleaseYearMusicbrainz { get; set; }
 
 		public bool Equals(ProperSongModel other)
 		{
@@ -42,24 +37,34 @@ namespace SpotifySongGuessingGame.Common
 			return TrackId.GetHashCode();
 		}
 
-		public static ProperSongModel Parse(SpotifySongData x)
+		public static ProperSongModel Parse(SpotifyTrack x)
 		{
 			return new ProperSongModel
 			{
-				Artist = x.track.artist.name,
-				SongName = x.track.name,
+				Artist = x.artist.name,
+				SongName = x.name,
 
-				Popularity = x.track.popularity,
+				Popularity = x.popularity,
 
-				TrackId = x.track.id,
-				TrackUri = x.track.uri,
+				TrackId = x.id,
+				TrackUri = x.uri,
 
-				ArtistId = x.track.artist.id,
-				ArtistUri = x.track.artist.uri,
+				ArtistId = x.artist.id,
+				ArtistUri = x.artist.uri,
 
-				ReleaseYear = x.track.album.release_date?.ParseYear() ?? int.MaxValue,
-				ReleaseDateSource = ReleaseDateSource.Spotify
+				ReleaseYearSpotify = x.album.release_date?.ParseYear() ?? int.MaxValue,
+				ReleaseYearMusicbrainz = 0
 			};
+		}
+
+		public static ProperSongModel Parse(SpotifySongData x)
+		{
+			return Parse(x.track);
+		}
+
+		public override string ToString()
+		{
+			return $"{Artist} - {SongName} | {ReleaseYearSpotify} (or {ReleaseYearMusicbrainz})";
 		}
 
 	}

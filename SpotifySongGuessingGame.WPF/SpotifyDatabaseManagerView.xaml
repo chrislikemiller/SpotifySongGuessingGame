@@ -12,6 +12,7 @@
 		<Grid.Resources>
 			<Style TargetType="TextBlock">
 				<Style.Setters>
+					<Setter Property="TextWrapping" Value="Wrap" />
 					<Setter Property="Margin" Value="2" />
 					<Setter Property="HorizontalAlignment" Value="Right" />
 				</Style.Setters>
@@ -34,12 +35,16 @@
 			<RowDefinition Height="auto" />
 			<RowDefinition Height="auto" />
 			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
 			<RowDefinition />
+			<RowDefinition Height="auto" />
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="auto" />
 			<ColumnDefinition Width="auto" />
-			<ColumnDefinition Width="75" />
+			<ColumnDefinition Width="auto" />
 			<ColumnDefinition Width="auto" />
 			<ColumnDefinition />
 		</Grid.ColumnDefinitions>
@@ -47,26 +52,17 @@
 		<TextBlock Grid.Row="0"
 		           Grid.Column="0"
 		           VerticalAlignment="Center"
-		           Text="Spotify playlist location:" />
+		           Text="Spotify playlist path:" />
 		<TextBox x:Name="spotifyDatabaseLocationTextBox"
 		         Grid.Row="0"
 		         Grid.Column="1"
 		         Width="400"
 		         LostFocus="spotifyDatabaseLocationTextBox_LostFocus" />
-		<Button Grid.Row="0"
-		        Grid.Column="2"
-		        Click="ReloadDatabaseButtonClicked"
-		        Content="Reload" />
-		<TextBlock x:Name="databaseNumberOfSongsLabel"
-		           Grid.Row="0"
-		           Grid.Column="3"
-		           Margin="5,0"
-		           VerticalAlignment="Center" />
 
 
 		<TextBlock Grid.Row="3"
 		           Grid.Column="0"
-		           Text="Download Spotify playlist data:" />
+		           Text="Download Spotify playlist:" />
 		<TextBox x:Name="downloadPlaylistDataTextBox"
 		         Grid.Row="3"
 		         Grid.Column="1" />
@@ -74,10 +70,35 @@
 		        Grid.Column="2"
 		        Click="DownloadPlaylistButtonClicked"
 		        Content="Download" />
+
+		<Separator Grid.Row="4" Grid.ColumnSpan="4" />
+
+		<StackPanel Grid.Row="5"
+		            Grid.Column="0"
+		            Grid.ColumnSpan="3"
+		            Orientation="Horizontal">
+			<TextBlock HorizontalAlignment="Left" Text="Create a playlist with the top songs from the artists in the given playlist. Top: " />
+			<TextBox x:Name="topXSongTextBox"
+			         Width="30"
+			         Text="2" />
+		</StackPanel>
+		<TextBlock Grid.Row="6"
+		           Grid.Column="0"
+		           Text="Playlist seed:" />
+		<TextBox x:Name="downloadTopSongsPlaylistDataTextBox"
+		         Grid.Row="6"
+		         Grid.Column="1" />
+		<Button Grid.Row="6"
+		        Grid.Column="2"
+		        Click="CreateTopSongPlaylistButtonClicked"
+		        Content="Start" />
+
+
 		<TextBlock x:Name="downloadStatusReportLabel"
-		           Grid.Row="4"
-		           Grid.Column="1"
-		           Grid.ColumnSpan="2" />
+		           Grid.Row="8"
+		           Grid.Column="0"
+		           Grid.ColumnSpan="3"
+		           HorizontalAlignment="Left" />
 
 	</Grid>
 </Window>

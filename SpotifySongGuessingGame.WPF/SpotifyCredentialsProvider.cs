@@ -59,7 +59,6 @@ namespace SpotifySongGuessingGame.WPF
 			catch (Exception ex)
 			{
 				LastError = ex.Message;
-
 			}
 		}
 	}
