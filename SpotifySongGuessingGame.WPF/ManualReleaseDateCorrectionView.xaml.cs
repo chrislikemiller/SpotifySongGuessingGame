@@ -65,7 +65,7 @@ namespace SpotifySongGuessingGame.WPF
 
 			playlistId = new FileInfo(playlistFilePathLabel.Text).Name.Split(".").First();
 			songs = spotifyDatabase.Playlists[playlistId]
-				//.Where(x => x.ReleaseYearMusicbrainz != x.ReleaseYearSpotify)
+				.Where(x => x.ReleaseYearMusicbrainz != x.ReleaseYearSpotify)
 				.ToArray();
 			NextSong(false);
 		}
@@ -74,7 +74,7 @@ namespace SpotifySongGuessingGame.WPF
 		{
 			yearTextBox.Text = "";
 			song = songs[songIndex];
-			UpdateStatus(song.ToString());
+			UpdateStatus($"[{songIndex} / {songs.Length}] {song}");
 			var sanitized = HttpUtility.UrlEncode($"{song.Artist} {song.SongName} release date");
 			Process.Start(new ProcessStartInfo($"https://www.google.com/search?q={sanitized}") { UseShellExecute = true });
 			if (doIncrement)
