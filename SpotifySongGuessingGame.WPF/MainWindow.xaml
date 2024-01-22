@@ -19,7 +19,8 @@
 		</Grid.Resources>
 		<StackPanel>
 			<Button Click="SpotifyDataBaseOpenClicked" Content="Open Spotify song database" />
-			<Button Click="MusicbrainzManagerClicked" Content="Update release dates" />
+			<Button Click="MusicbrainzManagerClicked" Content="Release date update with Musicbrainz" />
+			<Button Click="ManualReleaseDateManagerClicked" Content="Manual update release dates" />
 			<Button Click="ConfigManagerClicked" Content="Configs" />
 		</StackPanel>
 	</Grid>

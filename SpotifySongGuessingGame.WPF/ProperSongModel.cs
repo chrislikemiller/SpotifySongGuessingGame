@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SpotifySongGuessingGame.Common
 {
-	[DebuggerDisplay("{Artist} - {SongName} | {ReleaseYear} ({ReleaseDateSource})")]
+	[DebuggerDisplay("{Artist} - {SongName} | {ReleaseYearSpotify} | {ReleaseYearMusicbrainz}")]
 	public class ProperSongModel : IEquatable<ProperSongModel>
 	{
 		public string TrackUri { get; set; }

@@ -31,6 +31,12 @@ namespace SpotifySongGuessingGame.WPF
 			window.ShowDialog();
 		}
 
+		private void ManualReleaseDateManagerClicked(object sender, RoutedEventArgs e)
+		{
+			var window = new ManualReleaseDateCorrectionView(spotifyDatabase, releaseDateCorrection);
+			window.ShowDialog();
+		}
+
 		private void ConfigManagerClicked(object sender, RoutedEventArgs e)
 		{
 			var window = new ConfigView(configManager);
