@@ -1,4 +1,8 @@
-﻿using System.Windows;
+﻿using SpotifySongGuessingGame.Common;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Forms;
 
 namespace SpotifySongGuessingGame.WPF
 {
@@ -7,6 +11,7 @@ namespace SpotifySongGuessingGame.WPF
 		private readonly ConfigManager configManager;
 		private readonly SpotifyDatabase spotifyDatabase;
 		private readonly SpotifyCredentialsProvider credentialsProvider;
+		private readonly ImageService imageService;
 		private readonly ReleaseDateCorrectionService releaseDateCorrection;
 
 		public MainWindow()
@@ -17,6 +22,7 @@ namespace SpotifySongGuessingGame.WPF
 			releaseDateCorrection = new ReleaseDateCorrectionService(configManager);
 			spotifyDatabase = new SpotifyDatabase(configManager);
 			credentialsProvider = new SpotifyCredentialsProvider(configManager);
+			imageService = new ImageService(configManager);
 		}
 
 		private void SpotifyDataBaseOpenClicked(object sender, RoutedEventArgs e)
@@ -41,6 +47,41 @@ namespace SpotifySongGuessingGame.WPF
 		{
 			var window = new ConfigView(configManager);
 			window.ShowDialog();
+		}
+
+		private async void GenerateImagesClicked(object sender, RoutedEventArgs e)
+		{
+			var dialog = new OpenFileDialog();
+			dialog.Filter = "JSON files|*.json";
+			var result = dialog.ShowDialog();
+
+			if (result != System.Windows.Forms.DialogResult.OK)
+				return;
+
+			var playlistId = new FileInfo(dialog.FileName).Name.Split(".").First();
+			var songs = spotifyDatabase.Playlists[playlistId];
+			
+			await imageService.GenerateAllImages(playlistId, songs);
+		}
+
+		private void CreateCollagesClicked(object sender, RoutedEventArgs e)
+		{
+			var dialog = new OpenFileDialog();
+			dialog.Filter = "JSON files|*.json";
+			var result = dialog.ShowDialog();
+
+			if (result != System.Windows.Forms.DialogResult.OK)
+				return;
+
+			var playlistId = new FileInfo(dialog.FileName).Name.Split(".").First();
+			var songs = spotifyDatabase.Playlists[playlistId].ToList();
+
+			var splitLists = songs.SplitList(20);
+			for (int i = 0; i < splitLists.Count; i++)
+			{
+				imageService.CreateCollage(playlistId, splitLists[i], i);
+			}
+			System.Windows.MessageBox.Show("Creating collages finished");
 		}
 
 	}

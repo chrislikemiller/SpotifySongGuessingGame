@@ -3,6 +3,7 @@ using SpotifySongGuessingGame.Common;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -62,6 +63,21 @@ namespace SpotifySongGuessingGame.WPF
 
 				var databaseJson = File.ReadAllText(path);
 				Playlists[playlistId] = JsonConvert.DeserializeObject<HashSet<ProperSongModel>>(databaseJson) ?? new HashSet<ProperSongModel>();
+
+
+				Trace.WriteLine("Grouped by year:");
+				var groups = Playlists[playlistId].GroupBy(x => x.ReleaseYearMusicbrainz / 10);
+				foreach (var g in groups)
+				{
+					Trace.WriteLine($"{g.Key}0's | {g.Count()}");
+				}
+				var groups2 = Playlists[playlistId].GroupBy(x => x.SongName).Where(x => x.Count() > 1);
+				var toRemove = new List<ProperSongModel>();
+				foreach (var g in groups2)
+				{
+					Trace.WriteLine($"{g.Key} | {g.Count()}");
+					toRemove.Add(g.OrderBy(x => x.Popularity).First());
+				}
 			}
 		}
 

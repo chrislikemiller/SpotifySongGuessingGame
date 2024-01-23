@@ -42,5 +42,17 @@ namespace SpotifySongGuessingGame.Common
 		{
 			return string.Join(" ", str.Split(" ").Reverse());
 		}
+
+		public static List<List<T>> SplitList<T>(this List<T> source, int nSize)
+		{
+			var list = new List<List<T>>();
+
+			for (int i = 0; i < source.Count; i += nSize)
+			{
+				list.Add(source.GetRange(i, Math.Min(nSize, source.Count - i)));
+			}
+
+			return list;
+		}
 	}
 }

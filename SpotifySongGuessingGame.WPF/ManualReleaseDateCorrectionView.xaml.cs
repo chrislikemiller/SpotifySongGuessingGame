@@ -38,13 +38,14 @@ namespace SpotifySongGuessingGame.WPF
 			ResetSong();
 		}
 
-		private void TurnYearControlsOn(bool turnYearOn)
+		private void TurnYearControlsOn(bool turnYearControlsOn)
 		{
-			filePickerButton.IsEnabled = !turnYearOn;
-			startProcessButton.IsEnabled = !turnYearOn;
-			nextButton.IsEnabled = turnYearOn;
-			stopButton.IsEnabled = turnYearOn;
-			yearTextBox.IsEnabled = turnYearOn;
+			filePickerButton.IsEnabled = !turnYearControlsOn;
+			startProcessButton.IsEnabled = !turnYearControlsOn;
+			nextButton.IsEnabled = turnYearControlsOn;
+			stopButton.IsEnabled = turnYearControlsOn;
+			yearTextBox.IsEnabled = turnYearControlsOn;
+			Topmost = turnYearControlsOn;
 		}
 
 		private void FilePickerClicked(object sender, RoutedEventArgs e)
@@ -65,13 +66,19 @@ namespace SpotifySongGuessingGame.WPF
 
 			playlistId = new FileInfo(playlistFilePathLabel.Text).Name.Split(".").First();
 			songs = spotifyDatabase.Playlists[playlistId]
-				.Where(x => x.ReleaseYearMusicbrainz != x.ReleaseYearSpotify)
+				//.Where(x => x.ReleaseYearMusicbrainz != x.ReleaseYearSpotify)
+				.Where(x => x.ReleaseYearMusicbrainz / 10 == 201)
 				.ToArray();
-			NextSong(false);
+			NextSong(true);
 		}
 
 		private void NextSong(bool doIncrement)
 		{
+			if (songs.Length == songIndex)
+			{
+				UpdateStatus("All songs have their dates fixed (hopefully)!");
+				return;
+			}
 			yearTextBox.Text = "";
 			song = songs[songIndex];
 			UpdateStatus($"[{songIndex} / {songs.Length}] {song}");
