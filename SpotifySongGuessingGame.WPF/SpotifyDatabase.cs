@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace SpotifySongGuessingGame.WPF
 {
@@ -51,6 +52,16 @@ namespace SpotifySongGuessingGame.WPF
 
 		private void LoadAllPlaylists()
 		{
+			if (string.IsNullOrEmpty(databaseLocationPath))
+			{
+				MessageBox.Show("Welcome!\nTo use the app properly, please set the following:\n- Download Folder in Spotify Song Manager\n- Spotify app client ID/secret in configs\n- Musicbrainz ID/PW in configs (if it applies to you)", "Welcome", MessageBoxButton.OK, MessageBoxImage.Information);
+				return;
+			}
+
+			if (!Directory.Exists(databaseLocationPath))
+			{
+				Directory.CreateDirectory(databaseLocationPath);
+			}
 			var files = Directory.GetFiles(databaseLocationPath);
 			var playlistIds = files.Select(x => new FileInfo(x).Name.Split(".").First());
 			foreach (var playlistId in playlistIds)

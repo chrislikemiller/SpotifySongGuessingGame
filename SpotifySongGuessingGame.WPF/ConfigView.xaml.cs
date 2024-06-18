@@ -38,6 +38,7 @@ namespace SpotifySongGuessingGame.WPF
 			configManager.Set(ConfigKeys.SpotifyClientSecret, spotifyClientSecretTextBox.Text);
 			configManager.Set(ConfigKeys.MusicbrainzLoginId, musicBrainzIdTextBox.Text);
 			configManager.Set(ConfigKeys.MusicbrainzLoginPassword, musicBrainzPasswordTextBox.Password);
+			Close();
 		}
 	}
 }

@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -49,6 +50,10 @@ namespace SpotifySongGuessingGame.WPF
 				topXSongs = x;
 			}
 			var playlistId = downloadTopSongsPlaylistDataTextBox.Text;
+			if (IsSpotifyUrl(playlistId))
+			{
+				playlistId = playlistId.Split("/").Last();
+			}
 			var playlist = await DownloadPlaylist(playlistId);
 			var targetFileName = $"{playlistId}_top{topXSongs}";
 			if (playlist == null)
@@ -81,7 +86,7 @@ namespace SpotifySongGuessingGame.WPF
 				else
 				{
 					var error = await response.Content.ReadAsStringAsync();
-					UpdateStatus($"Download failed! {error}");
+					UpdateStatus($"Download failed! ([{response.StatusCode}] {error})");
 					continue;
 				}
 				UpdateStatus($"Downloaded top {topXSongs} by {artists.Length} playlist!");
@@ -95,11 +100,20 @@ namespace SpotifySongGuessingGame.WPF
 			await GenerateSpotifyCredentialsIfNeeded();
 
 			var playlistId = downloadPlaylistDataTextBox.Text;
+			if (IsSpotifyUrl(playlistId))
+			{
+				playlistId = playlistId.Split("/").Last();
+			}
 			var list = await DownloadPlaylist(playlistId);
 			if (list == null) return;
 
 			await spotifyDatabase.AddSongs(playlistId, list);
 
+		}
+
+		private bool IsSpotifyUrl(string playlistId)
+		{
+			return playlistId.Contains("spotify.com/playlist");
 		}
 
 		private async Task<IEnumerable<ProperSongModel>> DownloadPlaylist(string playlistId)
@@ -132,7 +146,7 @@ namespace SpotifySongGuessingGame.WPF
 				}
 				else
 				{
-					UpdateStatus($"Download failed! {await response.Content.ReadAsStringAsync()}");
+					UpdateStatus($"Download failed! ([{response.StatusCode}] {await response.Content.ReadAsStringAsync()})");
 					return null;
 				}
 				UpdateStatus($"Download success!");
@@ -148,7 +162,7 @@ namespace SpotifySongGuessingGame.WPF
 				await credentialsProvider.GenerateNewKey();
 				if (!string.IsNullOrEmpty(credentialsProvider.LastError))
 				{
-					UpdateStatus($"Token generation failed! {credentialsProvider.LastError}");
+					UpdateStatus($"Token generation failed! ({credentialsProvider.LastError})");
 				}
 				else
 				{

@@ -23,7 +23,7 @@ namespace SpotifySongGuessingGame.WPF
 			this.configManager = configManager;
 		}
 
-		public async Task UpdateSong(ProperSongModel song)
+		public async Task UpdateSong(ProperSongModel song, CancellationToken token)
 		{
 			Trace.WriteLine($"\nNext song: {song.Artist} - {song.SongName}");
 
@@ -42,6 +42,8 @@ namespace SpotifySongGuessingGame.WPF
 				var retryCount = 0;
 				while (retryCount < 10)
 				{
+					token.ThrowIfCancellationRequested();
+
 					artistData = await GetMusicBrainzDataForUrl<MusicbrainzArtistResponse>(artistUrl);
 					if (artistData.artists?.Length > 0)
 					{
@@ -77,6 +79,8 @@ namespace SpotifySongGuessingGame.WPF
 				var songUrl = "";
 				foreach (var artist in artistList)
 				{
+					token.ThrowIfCancellationRequested();
+
 					currentArtistIndex++;
 					Trace.WriteLine($"Trying artist: {artist.name} ({currentArtistIndex} / {artistList.Count()})");
 

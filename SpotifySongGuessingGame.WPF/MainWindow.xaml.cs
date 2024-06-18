@@ -1,8 +1,10 @@
 ﻿using SpotifySongGuessingGame.Common;
+using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Forms;
+using MessageBox = System.Windows.MessageBox;
 
 namespace SpotifySongGuessingGame.WPF
 {
@@ -58,10 +60,24 @@ namespace SpotifySongGuessingGame.WPF
 			if (result != System.Windows.Forms.DialogResult.OK)
 				return;
 
-			var playlistId = new FileInfo(dialog.FileName).Name.Split(".").First();
-			var songs = spotifyDatabase.Playlists[playlistId];
-			
-			await imageService.GenerateAllImages(playlistId, songs);
+			try
+			{
+				var playlistId = new FileInfo(dialog.FileName).Name.Split(".").First();
+				var songs = spotifyDatabase.Playlists[playlistId];
+
+				await imageService.GenerateAllImages(playlistId, songs);
+				MessageBox.Show($"Generated {songs.Count} images!");
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Error! {ex}");
+			}
+		}
+
+		private void GenerateIconCollageClicked(object sender, RoutedEventArgs e)
+		{
+			var path = @"black_rectangle_icon.png";
+			imageService.CreateCollageOfToken(path);
 		}
 
 		private void CreateCollagesClicked(object sender, RoutedEventArgs e)
@@ -73,15 +89,22 @@ namespace SpotifySongGuessingGame.WPF
 			if (result != System.Windows.Forms.DialogResult.OK)
 				return;
 
-			var playlistId = new FileInfo(dialog.FileName).Name.Split(".").First();
-			var songs = spotifyDatabase.Playlists[playlistId].ToList();
-
-			var splitLists = songs.SplitList(20);
-			for (int i = 0; i < splitLists.Count; i++)
+			try
 			{
-				imageService.CreateCollage(playlistId, splitLists[i], i);
+				var playlistId = new FileInfo(dialog.FileName).Name.Split(".").First();
+				var songs = spotifyDatabase.Playlists[playlistId].ToList();
+
+				var splitLists = songs.SplitList(20);
+				for (int i = 0; i < splitLists.Count; i++)
+				{
+					imageService.CreateCollage(playlistId, splitLists[i], i);
+				}
+				MessageBox.Show("Creating collages finished");
 			}
-			System.Windows.MessageBox.Show("Creating collages finished");
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Error! {ex}");
+			}
 		}
 
 	}

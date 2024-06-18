@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,12 +22,20 @@ namespace SpotifySongGuessingGame.WPF
 	{
 		private readonly SpotifyDatabase spotifyDatabase;
 		private readonly ReleaseDateCorrectionService releaseDateCorrection;
+		private CancellationTokenSource cto;
 
 		public MusicbrainzReleaseDateManagerView(SpotifyDatabase spotifyDatabase, ReleaseDateCorrectionService releaseDateCorrection)
 		{
 			InitializeComponent();
 			this.spotifyDatabase = spotifyDatabase;
 			this.releaseDateCorrection = releaseDateCorrection;
+
+			Closing += MusicbrainzReleaseDateManagerView_Closing;
+		}
+
+		private void MusicbrainzReleaseDateManagerView_Closing(object sender, EventArgs e)
+		{
+			cto.Cancel();
 		}
 
 		private void FilePickerClicked(object sender, RoutedEventArgs e)
@@ -48,14 +57,21 @@ namespace SpotifySongGuessingGame.WPF
 			var list = songs.Where(x => x.ReleaseYearMusicbrainz == 0);
 			int counter = 1;
 			var listCount = list.Count();
+			cto = new CancellationTokenSource();
+
 			UpdateStatus("Starting...");
+			StartProcessButton.IsEnabled = false;
 			foreach (var song in list)
 			{
 				try
 				{
 					var previousYear = song.ReleaseYearSpotify;
-					await releaseDateCorrection.UpdateSong(song);
+					await releaseDateCorrection.UpdateSong(song, cto.Token);
 					UpdateStatus($"[{counter++} / {listCount}] Updated {song.Artist} - {song.SongName} | {previousYear} -> {song.ReleaseYearSpotify}");
+				}
+				catch (OperationCanceledException)
+				{
+					return;
 				}
 				catch (Exception ex)
 				{
@@ -65,12 +81,14 @@ namespace SpotifySongGuessingGame.WPF
 			try
 			{
 				await spotifyDatabase.AddSongs(filename, songs);
-				UpdateStatus("Done!");
+				UpdateStatus("Saved successfully!");
 			}
 			catch (Exception ex)
 			{
 				Trace.WriteLine(ex);
+				UpdateStatus($"Faield to save to db! {ex.Message}");
 			}
+			StartProcessButton.IsEnabled = true;
 		}
 
 		private void UpdateStatus(string msg)

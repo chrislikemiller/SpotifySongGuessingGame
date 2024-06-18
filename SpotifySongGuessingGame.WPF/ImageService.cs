@@ -15,6 +15,7 @@ namespace SpotifySongGuessingGame.WPF
 {
 	class ImageService
 	{
+		private const int IMG_SIZE = 660;
 		private readonly ConfigManager configManager;
 
 		public ImageService(ConfigManager configManager)
@@ -52,7 +53,7 @@ namespace SpotifySongGuessingGame.WPF
 			SizeF songNameTextSize;
 			SizeF releaseYearTextSize;
 
-			var maxSize = new SizeF(620, 620);
+			var maxSize = new SizeF(IMG_SIZE, IMG_SIZE);
 			var artistSongNameFont = new Font(new FontFamily("Segoe UI"), 48, System.Drawing.FontStyle.Italic);
 			var releaseYearFont = new Font("Segoe UI", 132, System.Drawing.FontStyle.Bold);
 
@@ -92,12 +93,33 @@ namespace SpotifySongGuessingGame.WPF
 			var bytes = await client.GetByteArrayAsync(url);
 			using var ms = new MemoryStream(bytes);
 			var original = new Bitmap(ms);
-			var resized = new Bitmap(620, 620);
+			var resized = new Bitmap(IMG_SIZE, IMG_SIZE);
 			var drawing = Graphics.FromImage(resized);
 			drawing.Clear(Color.White);
 			drawing.DrawImage(original, (resized.Width - original.Width) / 2, (resized.Height - original.Height) / 2);
 			drawing.Save();
 			return resized;
+		}
+
+		public void CreateCollageOfToken(string filePath)
+		{
+			var outputRows = 12;
+			var outputColumns = 8;
+			var original = Image.FromFile(filePath);
+			var resizedOriginal = new Bitmap(original, new Size(120, 120));
+			var imageSize = 125;
+			var output = new Bitmap(imageSize * outputColumns, imageSize * outputRows);
+			using var g = Graphics.FromImage(output);
+			g.Clear(Color.White);
+
+			for (int x = 0; x < outputColumns; x += 1)
+			{
+				for (int y = 0; y < outputRows; y++)
+				{
+					g.DrawImage(resizedOriginal, x * imageSize, y * imageSize);
+				}
+			}
+			output.Save(Path.Combine(configManager.Get(ConfigKeys.DatabaseLocation), "icon.png"), ImageFormat.Png);
 		}
 
 
@@ -117,7 +139,7 @@ namespace SpotifySongGuessingGame.WPF
 
 			int frontCounter = 0;
 			int backCounter = 0;
-			int imageSize = 620;
+			int imageSize = IMG_SIZE;
 			var img = new Bitmap(outputColumns * imageSize, outputRows * imageSize);
 			using var drawing = Graphics.FromImage(img);
 			var array = songs.ToArray();

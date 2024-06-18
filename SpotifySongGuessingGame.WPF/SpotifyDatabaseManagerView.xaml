@@ -5,8 +5,8 @@
         xmlns:local="clr-namespace:SpotifySongGuessingGame.WPF"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         Title="Song Manager"
-        Width="750"
-        Height="270"
+        Width="670"
+        Height="200"
         mc:Ignorable="d">
 	<Grid Margin="10">
 		<Grid.Resources>
@@ -52,7 +52,7 @@
 		<TextBlock Grid.Row="0"
 		           Grid.Column="0"
 		           VerticalAlignment="Center"
-		           Text="Spotify playlist path:" />
+		           Text="Download folder:" />
 		<TextBox x:Name="spotifyDatabaseLocationTextBox"
 		         Grid.Row="0"
 		         Grid.Column="1"
@@ -62,7 +62,7 @@
 
 		<TextBlock Grid.Row="3"
 		           Grid.Column="0"
-		           Text="Download Spotify playlist:" />
+		           Text="Download Spotify playlist ID:" />
 		<TextBox x:Name="downloadPlaylistDataTextBox"
 		         Grid.Row="3"
 		         Grid.Column="1" />
@@ -84,7 +84,7 @@
 		</StackPanel>
 		<TextBlock Grid.Row="6"
 		           Grid.Column="0"
-		           Text="Playlist seed:" />
+		           Text="Playlist ID as seed:" />
 		<TextBox x:Name="downloadTopSongsPlaylistDataTextBox"
 		         Grid.Row="6"
 		         Grid.Column="1" />
