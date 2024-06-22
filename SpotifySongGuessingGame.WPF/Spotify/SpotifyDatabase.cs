@@ -77,7 +77,7 @@ namespace SpotifySongGuessingGame.WPF
 
 
 				Trace.WriteLine("Grouped by year:");
-				var groups = Playlists[playlistId].GroupBy(x => x.ReleaseYearMusicbrainz / 10);
+				var groups = Playlists[playlistId].GroupBy(x => x.ReleaseYearAutocorrected / 10);
 				foreach (var g in groups)
 				{
 					Trace.WriteLine($"{g.Key}0's | {g.Count()}");

@@ -22,7 +22,6 @@ namespace SpotifySongGuessingGame.WPF
 {
 	public partial class SpotifyDatabaseManagerView : Window
 	{
-		private readonly ConfigManager configManager;
 		private readonly SpotifyDatabase spotifyDatabase;
 		private readonly SpotifyCredentialsProvider credentialsProvider;
 
@@ -30,15 +29,9 @@ namespace SpotifySongGuessingGame.WPF
 		{
 			InitializeComponent();
 
-			this.configManager = configManager;
 			this.spotifyDatabase = spotifyDatabase;
 			this.credentialsProvider = credentialsProvider;
-			this.spotifyDatabaseLocationTextBox.Text = configManager.Get(ConfigKeys.DatabaseLocation);
-		}
-
-		private void spotifyDatabaseLocationTextBox_LostFocus(object sender, RoutedEventArgs e)
-		{
-			configManager.Set(ConfigKeys.DatabaseLocation, spotifyDatabaseLocationTextBox.Text);
+			spotifyDatabaseFolderLabel.Text = configManager.Get(ConfigKeys.DatabaseLocation);
 		}
 
 		private async void CreateTopSongPlaylistButtonClicked(object sender, RoutedEventArgs e)

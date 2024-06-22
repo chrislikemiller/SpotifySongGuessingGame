@@ -15,6 +15,7 @@ namespace SpotifySongGuessingGame.WPF
 		SpotifyClientSecret,
 		MusicbrainzLoginId,
 		MusicbrainzLoginPassword,
+		GeniusAPIAccessToken,
 	}
 
 	public class ConfigManager

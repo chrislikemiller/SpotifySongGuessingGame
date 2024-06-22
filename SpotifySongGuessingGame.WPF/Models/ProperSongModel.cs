@@ -18,7 +18,7 @@ namespace SpotifySongGuessingGame.Common
 		public string Artist { get; set; }
 		public string SongName { get; set; }
 		public int ReleaseYearSpotify { get; set; }
-		public int ReleaseYearMusicbrainz { get; set; }
+		public int ReleaseYearAutocorrected { get; set; }
 
 		public bool Equals(ProperSongModel other)
 		{
@@ -53,7 +53,7 @@ namespace SpotifySongGuessingGame.Common
 				ArtistUri = x.artist.uri,
 
 				ReleaseYearSpotify = x.album.release_date?.ParseYear() ?? int.MaxValue,
-				ReleaseYearMusicbrainz = 0
+				ReleaseYearAutocorrected = 0
 			};
 		}
 
@@ -64,7 +64,7 @@ namespace SpotifySongGuessingGame.Common
 
 		public override string ToString()
 		{
-			return $"{Artist} - {SongName} | {ReleaseYearSpotify} (or {ReleaseYearMusicbrainz})";
+			return $"{Artist} - {SongName} | {ReleaseYearSpotify} (or {ReleaseYearAutocorrected})";
 		}
 
 	}

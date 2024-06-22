@@ -44,6 +44,21 @@
 		</Grid.ColumnDefinitions>
 
 
+		<TextBlock Grid.Row="0"
+		           Grid.Column="0"
+		           VerticalAlignment="Center"
+		           Text="Download folder:" />
+		<Grid Grid.Row="0" Grid.Column="1">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="*" />
+				<ColumnDefinition Width="auto" />
+			</Grid.ColumnDefinitions>
+			<TextBox x:Name="spotifyDatabaseLocationTextBox" Grid.Column="0" />
+			<Button Grid.Column="1"
+			        Margin="2"
+			        Content="Select" Click="DatabaseFolderSelectClicked"/>
+		</Grid>
+
 		<TextBlock Grid.Row="1"
 		           Grid.Column="0"
 		           Text="Spotify id:" />

@@ -14,14 +14,14 @@ namespace SpotifySongGuessingGame.WPF
 		private readonly SpotifyDatabase spotifyDatabase;
 		private readonly SpotifyCredentialsProvider credentialsProvider;
 		private readonly ImageService imageService;
-		private readonly ReleaseDateCorrectionService releaseDateCorrection;
+		private readonly MusicbrainzReleaseDateCorrection releaseDateCorrection;
 
 		public MainWindow()
 		{
 			InitializeComponent();
 
 			configManager = new ConfigManager();
-			releaseDateCorrection = new ReleaseDateCorrectionService(configManager);
+			releaseDateCorrection = new MusicbrainzReleaseDateCorrection(configManager);
 			spotifyDatabase = new SpotifyDatabase(configManager);
 			credentialsProvider = new SpotifyCredentialsProvider(configManager);
 			imageService = new ImageService(configManager);
@@ -107,5 +107,10 @@ namespace SpotifySongGuessingGame.WPF
 			}
 		}
 
+		private void GeniusReleaseDateManagerClicked(object sender, RoutedEventArgs e)
+		{
+			var window = new GeniusReleaseDateCorrectionView(spotifyDatabase, configManager);
+			window.ShowDialog();
+		}
 	}
 }

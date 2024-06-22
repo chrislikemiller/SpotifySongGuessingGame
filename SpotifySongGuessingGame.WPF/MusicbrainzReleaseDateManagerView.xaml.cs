@@ -21,10 +21,10 @@ namespace SpotifySongGuessingGame.WPF
 	public partial class MusicbrainzReleaseDateManagerView : Window
 	{
 		private readonly SpotifyDatabase spotifyDatabase;
-		private readonly ReleaseDateCorrectionService releaseDateCorrection;
+		private readonly MusicbrainzReleaseDateCorrection releaseDateCorrection;
 		private CancellationTokenSource cto;
 
-		public MusicbrainzReleaseDateManagerView(SpotifyDatabase spotifyDatabase, ReleaseDateCorrectionService releaseDateCorrection)
+		public MusicbrainzReleaseDateManagerView(SpotifyDatabase spotifyDatabase, MusicbrainzReleaseDateCorrection releaseDateCorrection)
 		{
 			InitializeComponent();
 			this.spotifyDatabase = spotifyDatabase;
@@ -35,7 +35,7 @@ namespace SpotifySongGuessingGame.WPF
 
 		private void MusicbrainzReleaseDateManagerView_Closing(object sender, EventArgs e)
 		{
-			cto.Cancel();
+			cto?.Cancel();
 		}
 
 		private void FilePickerClicked(object sender, RoutedEventArgs e)
@@ -54,7 +54,7 @@ namespace SpotifySongGuessingGame.WPF
 		{
 			var filename = new FileInfo(playlistFilePathLabel.Text).Name.Split(".").First();
 			var songs = spotifyDatabase.Playlists[filename];
-			var list = songs.Where(x => x.ReleaseYearMusicbrainz == 0);
+			var list = songs.Where(x => x.ReleaseYearAutocorrected == 0);
 			int counter = 1;
 			var listCount = list.Count();
 			cto = new CancellationTokenSource();
@@ -67,7 +67,7 @@ namespace SpotifySongGuessingGame.WPF
 				{
 					var previousYear = song.ReleaseYearSpotify;
 					await releaseDateCorrection.UpdateSong(song, cto.Token);
-					UpdateStatus($"[{counter++} / {listCount}] Updated {song.Artist} - {song.SongName} | {previousYear} -> {song.ReleaseYearSpotify}");
+					UpdateStatus($"[{counter++} / {listCount}] Updated {song.Artist} - {song.SongName} | {previousYear} -> {song.ReleaseYearAutocorrected}");
 				}
 				catch (OperationCanceledException)
 				{

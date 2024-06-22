@@ -14,11 +14,11 @@ using System.Web;
 
 namespace SpotifySongGuessingGame.WPF
 {
-	public class ReleaseDateCorrectionService
+	public class MusicbrainzReleaseDateCorrection
 	{
 		private readonly ConfigManager configManager;
 
-		public ReleaseDateCorrectionService(ConfigManager configManager)
+		public MusicbrainzReleaseDateCorrection(ConfigManager configManager)
 		{
 			this.configManager = configManager;
 		}
@@ -113,7 +113,7 @@ namespace SpotifySongGuessingGame.WPF
 			if (recordings?.Any() != true)
 			{
 				Trace.WriteLine($"Exhausted all options for {song}");
-				song.ReleaseYearMusicbrainz = -1;
+				song.ReleaseYearAutocorrected = -1;
 				return;
 			}
 
@@ -123,7 +123,7 @@ namespace SpotifySongGuessingGame.WPF
 				var id = recordings.FirstOrDefault()?.id;
 				if (id == null)
 				{
-					song.ReleaseYearMusicbrainz = smallestYear;
+					song.ReleaseYearAutocorrected = smallestYear;
 					Trace.WriteLine($"More releases didn't help, saving {smallestYear}");
 					return;
 				}
@@ -136,7 +136,7 @@ namespace SpotifySongGuessingGame.WPF
 				}
 			}
 			Trace.WriteLine($"@@@ {song.Artist} - {song.SongName} || {song.ReleaseYearSpotify} -> {smallestYear}");
-			song.ReleaseYearMusicbrainz = smallestYear;
+			song.ReleaseYearAutocorrected = smallestYear;
 		}
 
 		private int GetSmallestYear(IEnumerable<Release> releases) => releases.Select(x => x.date.ParseYear()).Min();
@@ -149,6 +149,7 @@ namespace SpotifySongGuessingGame.WPF
 			var cache = new CredentialCache { { uri, "Digest", credentials } };
 			using var request = new HttpClient(new HttpClientHandler() { Credentials = cache, PreAuthenticate = true });
 			request.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
 			HttpResponseMessage response = null;
 			try
 			{

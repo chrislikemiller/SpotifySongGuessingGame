@@ -22,13 +22,13 @@ namespace SpotifySongGuessingGame.WPF
 	public partial class ManualReleaseDateCorrectionView : Window
 	{
 		private readonly SpotifyDatabase spotifyDatabase;
-		private readonly ReleaseDateCorrectionService releaseDateCorrection;
+		private readonly MusicbrainzReleaseDateCorrection releaseDateCorrection;
 		private string playlistId;
 		private int songIndex;
 		private ProperSongModel[] songs;
 		private ProperSongModel song;
 
-		public ManualReleaseDateCorrectionView(SpotifyDatabase spotifyDatabase, ReleaseDateCorrectionService releaseDateCorrection)
+		public ManualReleaseDateCorrectionView(SpotifyDatabase spotifyDatabase, MusicbrainzReleaseDateCorrection releaseDateCorrection)
 		{
 			InitializeComponent();
 			this.spotifyDatabase = spotifyDatabase;
@@ -66,8 +66,7 @@ namespace SpotifySongGuessingGame.WPF
 
 			playlistId = new FileInfo(playlistFilePathLabel.Text).Name.Split(".").First();
 			songs = spotifyDatabase.Playlists[playlistId]
-				//.Where(x => x.ReleaseYearMusicbrainz != x.ReleaseYearSpotify)
-				.Where(x => x.ReleaseYearMusicbrainz / 10 == 201)
+				.Where(x => x.ReleaseYearAutocorrected != x.ReleaseYearSpotify)
 				.ToArray();
 			NextSong(true);
 		}
@@ -109,7 +108,7 @@ namespace SpotifySongGuessingGame.WPF
 			{
 				Trace.WriteLine($"{newYear} - {song}");
 				song.ReleaseYearSpotify = year;
-				song.ReleaseYearMusicbrainz = year;
+				song.ReleaseYearAutocorrected = year;
 				NextSong(true);
 			}
 			else

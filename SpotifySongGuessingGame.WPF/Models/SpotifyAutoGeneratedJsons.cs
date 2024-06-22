@@ -6,12 +6,10 @@ using System.Threading.Tasks;
 
 namespace SpotifySongGuessingGame.Common
 {
-
 	public class SpotifyArtistTopSongResponse
 	{
 		public SpotifyTrack[] tracks { get; set; }
 	}
-
 
 	public class SpotifyPlaylistResponse
 	{

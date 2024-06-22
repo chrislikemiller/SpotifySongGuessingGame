@@ -1,0 +1,65 @@
+﻿<Window x:Class="SpotifySongGuessingGame.WPF.GeniusReleaseDateCorrectionView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:local="clr-namespace:SpotifySongGuessingGame.WPF"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="Genius API release date correction"
+        Width="400"
+        Height="190"
+        mc:Ignorable="d">
+	<Grid Margin="6">
+		<Grid.Resources>
+			<Style TargetType="TextBlock">
+				<Style.Setters>
+					<Setter Property="TextWrapping" Value="Wrap" />
+					<Setter Property="Margin" Value="2" />
+				</Style.Setters>
+			</Style>
+			<Style TargetType="TextBox">
+				<Style.Setters>
+					<Setter Property="Margin" Value="2" />
+					<Setter Property="HorizontalAlignment" Value="Stretch" />
+				</Style.Setters>
+			</Style>
+			<Style TargetType="Button">
+				<Style.Setters>
+					<Setter Property="Margin" Value="2" />
+					<Setter Property="HorizontalAlignment" Value="Stretch" />
+				</Style.Setters>
+			</Style>
+		</Grid.Resources>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
+			<RowDefinition Height="auto" />
+			<RowDefinition />
+			<RowDefinition Height="auto" />
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*" />
+		</Grid.ColumnDefinitions>
+		<Grid Grid.Row="0" Grid.Column="0">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="Auto" />
+				<ColumnDefinition Width="*" />
+			</Grid.ColumnDefinitions>
+			<TextBlock Grid.Column="0" Text="Genius access token: " />
+			<TextBox x:Name="geniusAccessTokenTextBox" Grid.Column="1" />
+		</Grid>
+		<StackPanel Grid.Row="1" Orientation="Horizontal">
+			<Button Width="70"
+			        Click="FilePickerClicked"
+			        Content="Pick file" />
+			<TextBlock x:Name="playlistFilePathLabel" />
+		</StackPanel>
+		<Button Name="StartProcessButton"
+		        Grid.Row="2"
+		        Width="100"
+		        HorizontalAlignment="Left"
+		        Click="StartProcessClicked"
+		        Content="Start process" />
+
+		<TextBlock x:Name="statusReportLabel" Grid.Row="3" />
+	</Grid>
+</Window>
