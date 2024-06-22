@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -21,21 +22,21 @@ namespace SpotifySongGuessingGame.WPF
 
 		public async Task<string> GetReleaseDate(string artist, string song)
 		{
-			var trackId = await GetTrackIdAsync(artist, song);
-			if (trackId != null)
+			Trace.WriteLine($"Getting release date for {artist} - {song}");
+			var releaseDate = await GetTrackReleaseDateAsync(artist.Trim(), song.Trim());
+			if (!string.IsNullOrEmpty(releaseDate))
 			{
-				var releaseDate = await GetTrackReleaseDateAsync(trackId);
-				Trace.WriteLine($"Artist: {artist}, Song: {song} - Release Date: {releaseDate}");
+				Trace.WriteLine($"Found: {artist} - {song} release date: {releaseDate}");
 				return releaseDate;
 			}
 			else
 			{
-				Trace.WriteLine($"Artist: {artist}, Song: {song} - Track ID not found");
-				return null;
+				Trace.WriteLine($"NOT FOUND track ID: {artist} - {song}");
+				return "";
 			}
 		}
 
-		private async Task<string> GetTrackIdAsync(string artist, string song)
+		private async Task<string> GetTrackReleaseDateAsync(string artist, string song)
 		{
 			using (var httpClient = new HttpClient())
 			{
@@ -45,37 +46,85 @@ namespace SpotifySongGuessingGame.WPF
 				response.EnsureSuccessStatusCode();
 
 				var content = await response.Content.ReadAsStringAsync();
-				var json = JObject.Parse(content);
-
 				try
 				{
-					var trackId = json["response"]?["hits"]?[0]?["result"]?["id"]?.ToString();
-					return trackId;
+					var model = JsonConvert.DeserializeObject<GeniusTrackIdObject>(content);
+					if (model.response.hits.Length > 0)
+					{
+						foreach (var hit in model.response.hits)
+						{
+							Trace.WriteLine($">>> {hit.result.primary_artist.name} - {hit.result.title}");
+						}
+
+						var songs = model.response.hits.Where(
+							x => x.result.title_with_featured.ToLower().Contains(song.ToLower())).ToArray();
+						var artists = model.response.hits.Where(
+							x => x.result.primary_artist.name.ToLower().Contains(artist.ToLower())).ToArray();
+						var picks = songs.Intersect(artists).Distinct().ToArray();
+
+						var pick = picks.FirstOrDefault()?.result;
+
+						if (pick != null)
+						{
+							if (pick.release_date_components == null)
+							{
+								var releaseDate = await GetTrackReleaseDateAsyncOld(pick.id);
+								if (DateTime.TryParse(releaseDate, out var date))
+								{
+									return date.Year.ToString();
+								}
+								else return "";
+							}
+							return pick.release_date_components.year.ToString();
+						}
+					}
+					else
+					{
+						return "";
+					}
 				}
 				catch (ArgumentOutOfRangeException)
 				{
 					Trace.WriteLine($"ERROR for {artist} - {song}");
 					Trace.WriteLine(content);
-					return "";
 				}
+				catch (Exception ex)
+				{
+					Trace.WriteLine(ex);
+				}
+				return "";
 			}
 		}
 
-		private async Task<string> GetTrackReleaseDateAsync(string trackId)
+		private async Task<string> GetTrackReleaseDateAsyncOld(int trackId)
 		{
-			using (var httpClient = new HttpClient())
+			try
 			{
-				httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
+				using (var httpClient = new HttpClient())
+				{
+					httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
 
-				var response = await httpClient.GetAsync($"{baseUrl}/songs/{trackId}");
-				response.EnsureSuccessStatusCode();
+					var response = await httpClient.GetAsync($"{baseUrl}/songs/{trackId}");
+					response.EnsureSuccessStatusCode();
 
-				var content = await response.Content.ReadAsStringAsync();
-				var json = JObject.Parse(content);
+					var content = await response.Content.ReadAsStringAsync();
+					var model = JsonConvert.DeserializeObject<SongRequestObject>(content);
 
-				var releaseDate = json["response"]?["song"]?["release_date"]?.ToString();
-				return releaseDate ?? "";
+					try
+					{
+						return model.response.song.release_date?.ToString() ?? "";
+					}
+					catch (Exception ex)
+					{
+						Trace.WriteLine(ex);
+					}
+				}
 			}
+			catch (Exception ex)
+			{
+				Trace.WriteLine(ex);
+			}
+			return "";
 		}
 	}
 }

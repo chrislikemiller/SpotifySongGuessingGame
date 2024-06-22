@@ -53,7 +53,7 @@
 			        Content="Pick file" />
 			<TextBlock x:Name="playlistFilePathLabel" />
 		</StackPanel>
-		<Button Name="StartProcessButton"
+		<Button x:Name="startProcessButton"
 		        Grid.Row="2"
 		        Width="100"
 		        HorizontalAlignment="Left"
